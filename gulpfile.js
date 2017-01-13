@@ -9,6 +9,8 @@ var concat = require('gulp-concat'),
     css = require('gulp-minify-css'),
     changed = require('gulp-changed'),
     imagemin = require('gulp-imagemin'),
+    ejs = require("gulp-ejs"),
+    del = require("del"),
     browserSync = require('browser-sync').create();
 
 
@@ -16,6 +18,7 @@ var src = 'project/src';
 var dist = 'project/dist';
 var paths = {
     html : src + '/**/*.html',
+    ejs : src + '/**/*.ejs',
     js : src + ['/js/**/*.js','plugins/**/*.js'],
     scss : src + '/sass/**/*.scss',
     css : src + '/css/**/*.css',
@@ -28,6 +31,10 @@ var paths = {
 * =====================================+
 */
 
+gulp.task('clean', function () {
+    return del.sync([dist]);
+});
+
 gulp.task('html', function () {
      return gulp
      .src(paths.html)
@@ -35,6 +42,16 @@ gulp.task('html', function () {
      .pipe(browserSync.reload({
          stream : true
      }));
+});
+
+gulp.task('ejs', function(){
+    return gulp
+    .src(paths.ejs)
+    .pipe(ejs())
+    .pipe(gulp.dest(dist))
+    .pipe(browserSync.reload({
+        stream : true
+    }));
 });
 
 /**
@@ -165,17 +182,18 @@ gulp.task('image:compile', function () {
 * @task : browserSync
 * ==============================+
 */
-gulp.task('browserSync', ['html', 'js:combine', 'scss:compile', 'css:minify', 'image:compile'], function () {
+gulp.task('browserSync', ['html', 'ejs', 'js:combine', 'scss:compile', 'css:minify', 'image:compile'], function () {
     return browserSync.init({
         port : 3333,
         server: {
-            baseDir: './project'
+            baseDir: './project/dist/'
         }
     });
 });
 
 gulp.task('watch', function () {
     gulp.watch('./**/*.html', ['html']);
+    gulp.watch('./**/*.ejs', ['ejs']);
     gulp.watch(paths.js, ['js:combine']);
     gulp.watch(paths.scss, ['scss:compile']);
     gulp.watch(paths.css, ['css:minify']);
@@ -183,4 +201,4 @@ gulp.task('watch', function () {
 });
 
 // gulp 를 실행하면 default 로 js:combine task, scss:compile task 그리고 watch task 를 실행하도록 한다.
-gulp.task('default', ['browserSync','watch']);
+gulp.task('default', ['clean', 'browserSync','watch']);
